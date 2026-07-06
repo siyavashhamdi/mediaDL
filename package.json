@@ -16,8 +16,10 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "deploy": "npm run setup:youtube && npm run build && pm2 startOrReload ecosystem.config.cjs --update-env",
-    "setup:youtube": "tsx scripts/setup-youtube.ts",
+    "deploy": "npm run setup:youtube && npm run build && pm2 startOrReload ecosystem.config.cjs --update-env && npm run pot:verify",
+    "setup:youtube": "node scripts/setup-youtube.mjs",
+    "pot:verify": "node scripts/verify-pot-server.mjs",
+    "youtube:test": "node scripts/youtube-test.mjs",
     "pot:start": "node vendor/bgutil-ytdlp-pot-provider/server/build/main.js",
     "download": "tsx src/cli.ts",
     "start": "node dist/cli.js",

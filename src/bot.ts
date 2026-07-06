@@ -286,9 +286,13 @@ function formatAnalyzeError(error: unknown, platform: MediaPlatform): string {
 
   if (
     platform === "youtube" &&
-    /sign in|not a bot|confirm you.re not a bot/i.test(message)
+    /sign in|not a bot|confirm you.re not a bot|login_required/i.test(message)
   ) {
     return "YouTube isn't allowing this download right now. Try again later.";
+  }
+
+  if (platform === "youtube" && /PO Token|bgutil|4416/i.test(message)) {
+    return "YouTube downloads aren't set up on the server yet. Ask the bot owner.";
   }
 
   return "Couldn't analyze this link. Check the URL and try again.";

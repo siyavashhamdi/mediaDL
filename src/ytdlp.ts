@@ -38,6 +38,7 @@ export function appendYtDlpPlatformArgs(
   }
 
   args.push("--js-runtimes", `node:${process.execPath}`);
+  args.push("--remote-components", "ejs:github");
   args.push("--plugin-dirs", ytDlpPluginDir);
   args.push("--extractor-args", buildYoutubeExtractorArgs());
 }
