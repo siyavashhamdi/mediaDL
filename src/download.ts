@@ -6,7 +6,7 @@ import type { LogContext } from "./logger";
 import { logDownloadComplete, logDownloadProgress } from "./logger";
 import type { MediaPlatform } from "./platform";
 import { toYtDlpDownloadSections, type TimeRange } from "./time-range";
-import { getYtDlp } from "./ytdlp";
+import { appendYtDlpPlatformArgs, getYtDlp } from "./ytdlp";
 
 export type DownloadPhase = "download" | "merge" | "extract";
 
@@ -169,6 +169,8 @@ export async function downloadVideo(options: DownloadOptions): Promise<string> {
     "--print",
     "after_move:filepath",
   ];
+
+  appendYtDlpPlatformArgs(args, platform);
 
   if (timeRange && platform === "youtube") {
     args.push(

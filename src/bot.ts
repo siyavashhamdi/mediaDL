@@ -76,6 +76,7 @@ import {
 } from "./telegram-status";
 import { formatSplitSummary, validateTimeRange, type TimeRange } from "./time-range";
 import type { InstagramContentType, MediaPlatform } from "./platform";
+import { isPotServerReachable } from "./ytdlp";
 import {
   analyzeVideo,
   formatDuration,
@@ -281,6 +282,13 @@ function formatAnalyzeError(error: unknown, platform: MediaPlatform): string {
 
   if (platform === "instagram" && /login|private|not available/i.test(message)) {
     return "Couldn't open this Instagram content. Only public posts, reels, and stories are supported.";
+  }
+
+  if (
+    platform === "youtube" &&
+    /sign in|not a bot|confirm you.re not a bot/i.test(message)
+  ) {
+    return "YouTube isn't allowing this download right now. Try again later.";
   }
 
   return "Couldn't analyze this link. Check the URL and try again.";
@@ -933,6 +941,18 @@ async function startBot(): Promise<void> {
   if (accessCounts.adminCount === 0) {
     logWarn(
       "access list has no admins — edit users.json or use /adminadd after adding your ID manually"
+    );
+  }
+
+  if (await isPotServerReachable()) {
+    logInfo("YouTube POT server reachable", undefined, {
+      url: config.youtubePotServerUrl,
+    });
+  } else {
+    logWarn(
+      "YouTube POT server not reachable — run npm run setup:youtube && npm run pot:start (or npm run deploy)",
+      undefined,
+      { url: config.youtubePotServerUrl }
     );
   }
 

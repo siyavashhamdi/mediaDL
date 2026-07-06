@@ -88,6 +88,7 @@ Useful PM2 commands after deploy:
 ```bash
 npx pm2 status
 npx pm2 logs media-downloader-bot
+npx pm2 logs bgutil-pot-server
 npx pm2 stop media-downloader-bot
 ```
 
@@ -162,3 +163,30 @@ npm start -- "https://www.instagram.com/reel/SHORTCODE/"
 - YouTube playlists are disabled by default; only the single linked video is downloaded.
 - Instagram carousel posts download the first item by default.
 - Only **public** Instagram content is supported (no login/cookies).
+
+### YouTube on a server
+
+YouTube often blocks datacenter IPs. This project uses **[bgutil PO tokens](https://github.com/Brainicism/bgutil-ytdlp-pot-provider)** — no browser cookies, no Docker.
+
+One-time setup on the server:
+
+```bash
+npm run setup:youtube   # downloads yt-dlp plugin + builds local POT server
+npm run deploy          # starts POT server + bot via PM2
+```
+
+PM2 runs two processes: `bgutil-pot-server` (port 4416) and `media-downloader-bot`.
+
+**Local dev:** run the POT server in another terminal, then start the bot:
+
+```bash
+npm run setup:youtube
+npm run pot:start       # terminal 1
+npm run dev             # terminal 2
+```
+
+Verify yt-dlp sees the plugin:
+
+```bash
+./bin/yt-dlp --plugin-dirs ./plugins -v "https://www.youtube.com/watch?v=dQw4w9WgXcQ" 2>&1 | grep bgutil
+```

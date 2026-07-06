@@ -16,7 +16,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "deploy": "npm run build && pm2 startOrReload ecosystem.config.cjs --update-env",
+    "deploy": "npm run setup:youtube && npm run build && pm2 startOrReload ecosystem.config.cjs --update-env",
+    "setup:youtube": "tsx scripts/setup-youtube.ts",
+    "pot:start": "node vendor/bgutil-ytdlp-pot-provider/server/build/main.js",
     "download": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "bot:start": "node dist/bot.js",

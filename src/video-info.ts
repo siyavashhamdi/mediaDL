@@ -1,6 +1,6 @@
 import type { InstagramContentType, MediaKind, MediaPlatform } from "./platform";
 import { detectMediaLink } from "./media-url";
-import { getYtDlp } from "./ytdlp";
+import { buildAnalyzeArgs, getYtDlp } from "./ytdlp";
 import type { YtDlpFormat } from "./formats";
 
 export type VideoInfo = {
@@ -272,10 +272,6 @@ export function formatVideoSummary(info: VideoInfo): string {
   return parts.join(" · ");
 }
 
-function buildAnalyzeArgs(url: string): string[] {
-  return [url, "--no-playlist"];
-}
-
 /**
  * Fetches public metadata and available formats only.
  * Does not download any media files to the server.
@@ -287,9 +283,9 @@ export async function analyzeVideo(url: string): Promise<VideoAnalysis> {
   }
 
   const ytDlp = await getYtDlp();
-  const data = (await ytDlp.getVideoInfo(
-    buildAnalyzeArgs(mediaLink.normalizedUrl)
-  )) as YtDlpJson;
+  const args = buildAnalyzeArgs(mediaLink.normalizedUrl, mediaLink.platform);
+  const stdout = await ytDlp.execPromise(args);
+  const data = JSON.parse(stdout) as YtDlpJson;
 
   return {
     info: mapVideoInfo(
