@@ -1,6 +1,6 @@
-# YouTube & Instagram Downloader
+# Media Downloader
 
-Personal **YouTube and Instagram** downloader (TypeScript + Node.js). Includes a Telegram bot and a CLI.
+Personal **YouTube and Instagram** media downloader (TypeScript + Node.js). Includes a Telegram bot and a CLI.
 
 Uses [yt-dlp](https://github.com/yt-dlp/yt-dlp) under the hood. On first run, the standalone `yt-dlp` binary is downloaded into `./bin/` (no Python required).
 
@@ -87,8 +87,8 @@ Useful PM2 commands after deploy:
 
 ```bash
 npx pm2 status
-npx pm2 logs yt-downloader-bot
-npx pm2 stop yt-downloader-bot
+npx pm2 logs media-downloader-bot
+npx pm2 stop media-downloader-bot
 ```
 
 Send a YouTube or Instagram link in chat. The bot will:

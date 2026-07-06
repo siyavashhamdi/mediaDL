@@ -3,7 +3,7 @@ const path = require("node:path");
 module.exports = {
   apps: [
     {
-      name: "yt-downloader-bot",
+      name: "media-downloader-bot",
       script: path.join(__dirname, "dist/bot.js"),
       cwd: __dirname,
       instances: 1,

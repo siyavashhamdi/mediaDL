@@ -629,7 +629,7 @@ async function handleAnalysisCommand(
 const WELCOME_MESSAGE = [
   "👋 Welcome!",
   "",
-  "I'm a YouTube and Instagram downloader — send me a link and I'll bring the video, photo, reel, story, or audio to you here in chat.",
+  "I'm a media downloader for YouTube and Instagram — send me a link and I'll bring the video, photo, reel, story, or audio to you here in chat.",
   "",
   "Supported links:",
   "• YouTube videos and Shorts",

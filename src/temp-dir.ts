@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-const TEMP_PREFIX = "yt-dl-";
+const TEMP_PREFIX = "media-dl-";
 
 export async function createTempDownloadDir(): Promise<string> {
   return mkdtemp(path.join(tmpdir(), TEMP_PREFIX));

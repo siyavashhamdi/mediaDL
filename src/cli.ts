@@ -8,7 +8,7 @@ import { analyzeVideo } from "./video-info";
 
 function printUsage(): void {
   console.log(`
-YouTube & Instagram downloader
+Media downloader (YouTube & Instagram)
 
 Usage: npm run download -- <media-url> [options]
 

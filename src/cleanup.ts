@@ -6,7 +6,7 @@ import { promisify } from "node:util";
 import { ytDlpBinaryPath } from "./ytdlp";
 
 const execFileAsync = promisify(execFile);
-const TEMP_PREFIX = "yt-dl-";
+const TEMP_PREFIXES = ["media-dl-", "yt-dl-"];
 
 export async function cleanupStaleDownloads(): Promise<void> {
   await killStaleYtDlpProcesses();
@@ -48,7 +48,7 @@ async function cleanupTempDirs(): Promise<void> {
   }
 
   for (const entry of entries) {
-    if (!entry.startsWith(TEMP_PREFIX)) {
+    if (!TEMP_PREFIXES.some((prefix) => entry.startsWith(prefix))) {
       continue;
     }
 
