@@ -202,8 +202,8 @@ export function formatQualityPickerCaption(
       formatQualityList(options),
       "",
       hasOversized
-        ? "⚠️ Items marked ⚠️ may exceed Telegram's 50 MB upload limit."
-        : "✅ All listed qualities should fit Telegram's 50 MB limit.",
+        ? "⚠️ Items marked ⚠️ may be too large to send."
+        : "✅ All listed qualities should send without issues.",
       "",
       "Tap a button to start downloading.",
     ].filter((part): part is string => Boolean(part))

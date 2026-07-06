@@ -25,7 +25,7 @@ export function formatDownloadProgressLine(
 }
 
 export function formatUploadProgressLine(percent: number): string {
-  return `⬆️ Uploading to Telegram (${percent.toFixed(1)}%)`;
+  return `⬆️ Uploading (${percent.toFixed(1)}%)`;
 }
 
 export function formatPreparingProgressLine(options?: {

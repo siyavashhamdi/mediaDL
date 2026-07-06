@@ -8,6 +8,90 @@ import type { LogContext } from "./logger";
 import { logError, logInfo } from "./logger";
 import { formatAdminNotifyCaption } from "./quality-picker";
 import { sendMediaCopy } from "./telegram-upload";
+import type { Telegram } from "telegraf";
+import { truncateText } from "./video-info";
+
+const ACCESS_REQUEST_COOLDOWN_MS = 10 * 60 * 1000;
+const accessRequestCooldown = new Map<number, number>();
+
+function shouldNotifyAccessRequest(userId: number): boolean {
+  const now = Date.now();
+  const lastNotified = accessRequestCooldown.get(userId);
+
+  if (lastNotified && now - lastNotified < ACCESS_REQUEST_COOLDOWN_MS) {
+    return false;
+  }
+
+  accessRequestCooldown.set(userId, now);
+  return true;
+}
+
+function formatAccessRequestMessage(input: {
+  userId: number;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  messageText?: string;
+}): string {
+  const requester = input.username
+    ? `@${input.username} (${input.userId})`
+    : String(input.userId);
+  const name = [input.firstName, input.lastName].filter(Boolean).join(" ");
+
+  const lines = [
+    "🚫 Access request",
+    "",
+    "Someone tried to use the bot without access.",
+    "",
+    `👤 User: ${requester}`,
+  ];
+
+  if (name) {
+    lines.push(`📛 Name: ${name}`);
+  }
+
+  if (input.messageText) {
+    lines.push("", `💬 Message: ${truncateText(input.messageText, 200)}`);
+  }
+
+  lines.push("", `To allow: /useradd ${input.userId}`);
+
+  return lines.join("\n");
+}
+
+export async function notifyAdminsOfAccessRequest(input: {
+  telegram: Telegram;
+  userId: number;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  messageText?: string;
+  logContext?: LogContext;
+}): Promise<void> {
+  if (!shouldNotifyAccessRequest(input.userId)) {
+    return;
+  }
+
+  const adminIds = await getAdminChatIds();
+  if (adminIds.length === 0) {
+    return;
+  }
+
+  const message = formatAccessRequestMessage(input);
+
+  for (const adminId of adminIds) {
+    try {
+      await input.telegram.sendMessage(adminId, message);
+      logInfo("admin access request notify sent", input.logContext, { adminId });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logError("admin access request notify failed", input.logContext, {
+        adminId,
+        error: errorMessage,
+      });
+    }
+  }
+}
 
 function resolveSendMethod(
   quality: QualityOption

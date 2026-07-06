@@ -51,7 +51,7 @@ Edit `users.json` while the bot is running — changes apply on the next message
 - **admins** — full access; can run `/list`, `/logs`, `/useradd`, `/userremove`, `/adminadd`, `/adminremove`
 - **users** — allowed to use the bot
 
-Unknown users get a denial message with their Telegram user ID. Use `/whoami` to see your ID and role.
+Unknown users get a short denial message with their Telegram user ID so they can ask for access.
 
 ### Admin commands
 

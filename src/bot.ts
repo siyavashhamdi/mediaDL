@@ -10,7 +10,7 @@ import {
   type UserAccess,
 } from "./access-control";
 import { registerAdminCommands } from "./admin-commands";
-import { notifyAdminsOfUserDownload } from "./admin-notify";
+import { notifyAdminsOfAccessRequest, notifyAdminsOfUserDownload } from "./admin-notify";
 import {
   beginDownload,
   cancelDownload,
@@ -32,6 +32,7 @@ import {
   logDownloadSelected,
   logError,
   logInfo,
+  logWarn,
   logQualityOptions,
   logTelegramUploadProgress,
   logVideoInfo,
@@ -158,6 +159,20 @@ function logContextFromCtx(ctx: Context): LogContext | undefined {
   });
 }
 
+function getAccessAttemptText(ctx: Context): string | undefined {
+  const message = ctx.message;
+  if (message && "text" in message && message.text) {
+    return message.text;
+  }
+
+  const callback = ctx.callbackQuery;
+  if (callback && "data" in callback && callback.data) {
+    return `Button: ${callback.data}`;
+  }
+
+  return undefined;
+}
+
 const accessMiddleware: MiddlewareFn<Context> = async (ctx, next) => {
   const userId = ctx.from?.id;
   if (!userId) {
@@ -179,8 +194,21 @@ const accessMiddleware: MiddlewareFn<Context> = async (ctx, next) => {
         })
       );
 
+      void notifyAdminsOfAccessRequest({
+        telegram: ctx.telegram,
+        userId,
+        username: ctx.from?.username,
+        firstName: ctx.from?.first_name,
+        lastName: ctx.from?.last_name,
+        messageText: getAccessAttemptText(ctx),
+        logContext: logContextFromCtx(ctx),
+      });
+
       if (ctx.callbackQuery) {
-        await ctx.answerCbQuery("Access denied.", { show_alert: true });
+        await ctx.answerCbQuery(
+          `This bot is private. Your ID: ${userId}`,
+          { show_alert: true }
+        );
         return;
       }
 
@@ -189,9 +217,9 @@ const accessMiddleware: MiddlewareFn<Context> = async (ctx, next) => {
           [
             "⛔ This bot is private.",
             "",
-            `Your Telegram user ID: ${userId}`,
+            "You don't have access. Ask the bot owner for an invitation.",
             "",
-            "Ask an admin to add your ID to users.json.",
+            `Your ID: ${userId}`,
           ].join("\n"),
           { reply_parameters: { message_id: ctx.message.message_id } }
         );
@@ -206,14 +234,17 @@ const accessMiddleware: MiddlewareFn<Context> = async (ctx, next) => {
     logError(`[access] failed to read access list: ${message}`);
 
     if (ctx.callbackQuery) {
-      await ctx.answerCbQuery("Access control misconfigured.", {
+      await ctx.answerCbQuery("This bot isn't available right now.", {
         show_alert: true,
       });
       return;
     }
 
     if (ctx.message) {
-      await ctx.reply("Bot access control is misconfigured. Contact the operator.");
+      await ctx.reply(
+        "This bot isn't available right now. Please try again later.",
+        { reply_parameters: { message_id: ctx.message.message_id } }
+      );
     }
   }
 };
@@ -244,11 +275,23 @@ function formatBytes(bytes: number): string {
 function formatAnalyzeError(error: unknown, platform: MediaPlatform): string {
   const message = error instanceof Error ? error.message : String(error);
 
-  if (platform === "instagram" && /login|private|not available/i.test(message)) {
-    return `Could not access this Instagram content: ${message}\n\nOnly public posts, reels, and stories are supported.`;
+  if (/unsupported|unrecognized/i.test(message)) {
+    return "That link isn't supported. Send a YouTube or Instagram URL.";
   }
 
-  return `Could not analyze media: ${message}`;
+  if (platform === "instagram" && /login|private|not available/i.test(message)) {
+    return "Couldn't open this Instagram content. Only public posts, reels, and stories are supported.";
+  }
+
+  return "Couldn't analyze this link. Check the URL and try again.";
+}
+
+function formatTimeRangeError(): string {
+  return "That time range isn't valid for this video. Try a different start and end.";
+}
+
+function formatDownloadError(): string {
+  return "Download failed. Please try again.";
 }
 
 async function replyFailure(
@@ -341,8 +384,8 @@ async function processSelectedQuality(
         [
           status.getBaseCaption(),
           "",
-          `Downloaded, but the file is ${formatBytes(fileStat.size)}.`,
-          "Telegram bots can only send files up to 50 MB.",
+          "Downloaded, but this file is too large to send here.",
+          "Try a lower quality.",
         ].join("\n"),
         true
       );
@@ -415,7 +458,7 @@ async function processSelectedQuality(
 
     const message = error instanceof Error ? error.message : String(error);
     logError("download failed", logCtx, { error: message });
-    await replyFailure(status, `Download failed: ${message}`);
+    await replyFailure(status, formatDownloadError());
   } finally {
     finishDownload(chatId, signal);
 
@@ -620,9 +663,8 @@ async function handleAnalysisCommand(
       },
       ctx.from?.username
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    await replyToUser(ctx, `Invalid time range: ${message}`);
+  } catch {
+    await replyToUser(ctx, formatTimeRangeError());
   }
 }
 
@@ -705,16 +747,21 @@ bot.start((ctx) => {
 
 bot.command("whoami", (ctx) => {
   const access = ctx.state.userAccess as UserAccess | undefined;
-  const lines = [
-    `Your Telegram user ID: ${ctx.from?.id ?? "unknown"}`,
-    `Role: ${access?.isAdmin ? "admin" : "user"}`,
-  ];
 
   if (access?.isAdmin) {
-    lines.push("", ADMIN_COMMANDS_HELP);
+    void replyToUser(
+      ctx,
+      [
+        `Your Telegram user ID: ${ctx.from?.id ?? "unknown"}`,
+        "Role: admin",
+        "",
+        ADMIN_COMMANDS_HELP,
+      ].join("\n")
+    );
+    return;
   }
 
-  void replyToUser(ctx, lines.join("\n"));
+  void replyToUser(ctx, "You're set up to use this bot.");
 });
 
 registerAdminCommands(bot);
@@ -771,9 +818,8 @@ bot.on("text", (ctx) => {
       },
       ctx.from?.username
     );
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    void replyToUser(ctx, `Invalid time range: ${message}`);
+  } catch {
+    void replyToUser(ctx, formatTimeRangeError());
   }
 });
 
@@ -833,7 +879,7 @@ bot.on("callback_query", async (ctx) => {
 
   if (choice.exceedsTelegramLimit) {
     await ctx.answerCbQuery(
-      "This quality may exceed Telegram's 50 MB limit. Continuing anyway.",
+      "This quality may be too large to send. Continuing anyway.",
       { show_alert: true }
     );
   } else {
@@ -883,6 +929,12 @@ async function startBot(): Promise<void> {
     summary: formatAccessSummary(accessCounts),
     file: config.accessListFile,
   });
+
+  if (accessCounts.adminCount === 0) {
+    logWarn(
+      "access list has no admins — edit users.json or use /adminadd after adding your ID manually"
+    );
+  }
 
   const stopCleanupScheduler = startDownloadCleanupScheduler();
   await bot.launch();

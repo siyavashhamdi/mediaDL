@@ -76,8 +76,38 @@ function normalizeEntries(entries: UserEntry[] | undefined): AccessEntry[] {
   return result;
 }
 
+function isENOENT(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "ENOENT"
+  );
+}
+
+const EMPTY_ACCESS_LIST: AccessListFile = {
+  admins: [],
+  users: [],
+};
+
+async function createDefaultAccessListFile(): Promise<void> {
+  const content = `${JSON.stringify(EMPTY_ACCESS_LIST, null, 2)}\n`;
+  await writeFile(config.accessListFile, content, "utf8");
+}
+
 async function readAccessListFile(): Promise<AccessListFile> {
-  const raw = await readFile(config.accessListFile, "utf8");
+  let raw: string;
+
+  try {
+    raw = await readFile(config.accessListFile, "utf8");
+  } catch (error) {
+    if (isENOENT(error)) {
+      await createDefaultAccessListFile();
+      return { ...EMPTY_ACCESS_LIST };
+    }
+    throw error;
+  }
+
   const data = JSON.parse(raw) as AccessListFile;
 
   if (!data || typeof data !== "object") {
@@ -256,10 +286,6 @@ export async function validateAccessListFile(): Promise<{
   adminCount: number;
 }> {
   const { users, admins } = await loadAccessList();
-
-  if (users.size === 0) {
-    throw new Error("Access list has no users or admins.");
-  }
 
   return {
     userCount: users.size,
