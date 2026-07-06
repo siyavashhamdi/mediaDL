@@ -1,0 +1,15 @@
+{
+  "admins": [
+    {
+      "id": 123456789,
+      "note": "Replace with your Telegram user ID"
+    }
+  ],
+  "users": [
+    {
+      "id": 987654321,
+      "note": "Friend or family member"
+    }
+  ],
+  "_comment": "Admins can manage this file via bot commands: /list, /useradd, /userremove, /adminadd, /adminremove"
+}

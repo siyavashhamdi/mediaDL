@@ -1,0 +1,8 @@
+{
+  "watch": ["src", ".env"],
+  "ext": "ts,json,env",
+  "ignore": ["logs/**", "downloads/**", "dist/**", "node_modules/**", "bin/**"],
+  "exec": "tsx src/bot.ts",
+  "signal": "SIGTERM",
+  "delay": 500
+}
